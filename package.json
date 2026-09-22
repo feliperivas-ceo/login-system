@@ -1,0 +1,8 @@
+{
+  "name": "login-system",
+  "private": true,
+  "scripts": {
+    "docker:up": "docker compose up --build",
+    "docker:down": "docker compose down"
+  }
+}

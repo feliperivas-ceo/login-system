@@ -1,0 +1,65 @@
+services:
+  db:
+    image: postgres:16-alpine
+    container_name: login-system-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: app
+      POSTGRES_PASSWORD: app_password_change_me
+      POSTGRES_DB: login_system
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U app -d login_system"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  backend:
+    build:
+      context: ./backend
+    container_name: login-system-backend
+    restart: unless-stopped
+    environment:
+      DATABASE_URL: postgresql://app:app_password_change_me@db:5432/login_system?schema=public
+      PORT: 3000
+      FRONTEND_URL: http://localhost:5173
+      JWT_ACCESS_SECRET: change_this_access_secret_in_production
+      JWT_REFRESH_SECRET: change_this_refresh_secret_in_production
+      COOKIE_SECURE: "false"
+      COOKIE_DOMAIN: ""
+      GOOGLE_CLIENT_ID: ""
+      GOOGLE_CLIENT_SECRET: ""
+      GOOGLE_CALLBACK_URL: http://localhost:3000/auth/google/callback
+      LINKEDIN_CLIENT_ID: ""
+      LINKEDIN_CLIENT_SECRET: ""
+      LINKEDIN_CALLBACK_URL: http://localhost:3000/auth/linkedin/callback
+      FACEBOOK_CLIENT_ID: ""
+      FACEBOOK_CLIENT_SECRET: ""
+      FACEBOOK_CALLBACK_URL: http://localhost:3000/auth/facebook/callback
+      MICROSOFT_CLIENT_ID: ""
+      MICROSOFT_CLIENT_SECRET: ""
+      MICROSOFT_CALLBACK_URL: http://localhost:3000/auth/microsoft/callback
+    ports:
+      - "3000:3000"
+      - "5555:5555"
+    depends_on:
+      db:
+        condition: service_healthy
+
+  frontend:
+    build:
+      context: ./frontend
+    container_name: login-system-frontend
+    restart: unless-stopped
+    environment:
+      VITE_API_URL: http://localhost:3000
+    ports:
+      - "5173:5173"
+    depends_on:
+      - backend
+
+volumes:
+  postgres_data:
